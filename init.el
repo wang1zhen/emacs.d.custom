@@ -10,6 +10,17 @@
 (tooltip-mode -1)           ; Disable tooltips
 (set-fringe-mode 10)        ; 左右边框
 
+;; Column number in the modeline
+(column-number-mode t)
+
+;; Line numbers
+(global-display-line-numbers-mode t)
+;; Disable for some modes
+(dolist (mode '(org-mode-hook
+		term-mode-hook
+		eshell-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
 ;; Visual bell
 (setq visible-bell t)
 
@@ -45,9 +56,6 @@
            return (set-fontset-font t '(#x4e00 . #x9fff) font)))
 ;; 字体检查 言 ♪
 
-;; Theme
-(load-theme 'tango-dark)
-
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
@@ -66,25 +74,73 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 (require 'use-package)
-(setq use-package-always-ensure t)
 
-(use-package command-log-mode)
+(use-package command-log-mode
+  :ensure t)
 
-(use-package all-the-icons)
+(use-package all-the-icons
+  :ensure t)
 
 (use-package doom-modeline
+  :ensure t
+  :diminish doom-modeline-mode
   :init (doom-modeline-mode 1))
 
 (use-package ivy
-;;  :diminish ivy-mode
-  :config (ivy-mode 1)
-  :custom (ivy-use-selectable-prompt 1))
+  :ensure t
+  :diminish ivy-mode
+  :init (ivy-mode 1)
+  :custom
+  (ivy-use-selectable-prompt 1)
+  (ivy-initial-inputs-alist nil))
 
 (use-package swiper
+  :ensure t
   :bind (("C-s" . swiper)))
 
 (use-package counsel
-  )
+  :ensure t
+  :diminish counsel-mode
+  :init (counsel-mode 1))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :diminish counsel-mode
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package which-key
+  :ensure t
+  :diminish which-key-mode
+  :init (which-key-mode)
+  :config
+  (setq which-key-idle-delay 0.1))
+
+(use-package ivy-rich
+  :ensure t
+  :diminish ivy-rich-mode
+  :init (ivy-rich-mode 1))
+
+(use-package helpful
+  :ensure t
+  :bind
+  ([remap describe-function] . #'helpful-callable)
+  ([remap describe-variable] . #'helpful-variable)
+  ([remap describe-key] . #'helpful-key))
+
+(use-package undo-fu
+  :ensure t
+  :bind
+  ("C-/" . undo-fu-only-undo)
+  ("C-r" . undo-fu-only-redo))
+
+(use-package doom-themes
+  :ensure t
+  :custom
+  (doom-themes-enable-bold t)
+  (doom-themes-enable-italic t)
+  :config
+  (load-theme 'doom-one t)
+  (doom-themes-org-config))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -92,7 +148,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(counsel swiper ivy command-log-mode use-package doom-modeline)))
+   '(doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
