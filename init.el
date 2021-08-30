@@ -103,6 +103,9 @@
   :diminish counsel-mode
   :init (counsel-mode 1))
 
+(use-package amx
+  :ensure t)
+
 (use-package rainbow-delimiters
   :ensure t
   :diminish counsel-mode
@@ -131,7 +134,8 @@
   :ensure t
   :bind
   ("C-/" . undo-fu-only-undo)
-  ("C-r" . undo-fu-only-redo))
+  ("C-r" . undo-fu-only-redo)
+  ("C-x r" . undo-fu-only-redo))
 
 (use-package doom-themes
   :ensure t
@@ -139,8 +143,76 @@
   (doom-themes-enable-bold t)
   (doom-themes-enable-italic t)
   :config
-  (load-theme 'doom-one t)
+  (load-theme 'doom-molokai t)
   (doom-themes-org-config))
+
+(use-package general
+  :ensure t
+  :config
+  (general-create-definer w1/leader-key1
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-c")
+  (w1/leader-key1
+    "o" '(:ignore t :which-key "custom entry")
+    "ot" '(counsel-load-theme :which-key "choose theme"))
+  )
+
+(use-package evil
+  :ensure t
+  :init
+  (setq
+   evil-want-integration t
+   evil-want-keybinding nil
+   evil-want-C-u-scroll t
+   evil-want-C-i-jump nil
+   evil-disable-insert-state-bindings t)
+;;  :hook
+  :config
+  (evil-mode 1)
+  (evil-global-set-key 'insert (kbd "C-g") 'evil-normal-state)
+
+  ;; Visual line motions
+  (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+  (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+
+  ;; Emacs flavour moving in normal and visual mode
+  (evil-global-set-key 'normal (kbd "C-f") 'forward-char)
+  (evil-global-set-key 'normal (kbd "C-b") 'backward-char)
+  (evil-global-set-key 'normal (kbd "C-n") 'next-line)
+  (evil-global-set-key 'normal (kbd "C-p") 'previous-line)
+  (evil-global-set-key 'normal (kbd "C-a") 'move-beginning-of-line)
+  (evil-global-set-key 'normal (kbd "C-e") 'move-end-of-line)
+
+  (evil-global-set-key 'visual (kbd "C-f") 'forward-char)
+  (evil-global-set-key 'visual (kbd "C-b") 'backward-char)
+  (evil-global-set-key 'visual (kbd "C-n") 'next-line)
+  (evil-global-set-key 'visual (kbd "C-p") 'previous-line)
+  (evil-global-set-key 'visual (kbd "C-a") 'move-beginning-of-line)
+  (evil-global-set-key 'visual (kbd "C-e") 'move-end-of-line)
+  )
+
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :config
+  (evil-collection-init))
+
+(use-package hydra
+  :ensure t
+  :config
+  (defhydra hydra-text-scale (:timeout 4)
+  "scale text"
+  ("j" text-scale-increase "in")
+  ("k" text-scale-decrease "out")
+  ("f" nil "finished" :exit t))
+  (w1/leader-key1
+   "os" '(hydra-text-scale/body :which-key "scale text")))
+
+(use-package avy
+  :ensure t)
+
+;; youdao-dictionary (TODO)
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -148,7 +220,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
+   '(hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
