@@ -59,6 +59,9 @@
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
+;; Use the system clipboard
+(setq x-select-enable-clipboard t)
+
 ;; Initialize package sources
 (require 'package)
 
@@ -125,10 +128,13 @@
 
 (use-package helpful
   :ensure t
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . #'helpful-callable)
-  ([remap describe-variable] . #'helpful-variable)
-  ([remap describe-key] . #'helpful-key))
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
 
 (use-package undo-fu
   :ensure t
@@ -153,10 +159,14 @@
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
     :global-prefix "C-c")
+
   (w1/leader-key1
     "o" '(:ignore t :which-key "custom entry")
-    "ot" '(counsel-load-theme :which-key "choose theme"))
-  )
+    "ot" '(counsel-load-theme :which-key "choose theme")
+    "oy" '(youdao-dictionary-search-at-point :which-key "Youdao Dict"))
+
+  (general-define-key :keymaps 'evil-insert-state-map
+		      (general-chord "jk") 'evil-normal-state))
 
 (use-package evil
   :ensure t
@@ -212,7 +222,18 @@
 (use-package avy
   :ensure t)
 
-;; youdao-dictionary (TODO)
+(use-package youdao-dictionary
+  :ensure t
+  :config
+  (general-define-key
+   :states 'normal
+   :keymaps 'youdao-dictionary-mode-map
+   "q" 'quit-window))
+
+(use-package key-chord
+  :ensure t
+  :diminish key-chord-mode
+  :init (key-chord-mode 1))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -220,7 +241,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
+   '(youdao-dictionary key-chord keychord hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
