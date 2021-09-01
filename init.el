@@ -62,12 +62,19 @@
 ;; Use the system clipboard
 (setq x-select-enable-clipboard t)
 
+;; Always focus the help window
+(setq help-window-select t)
+
 ;; Initialize package sources
 (require 'package)
 
-(setq package-archives '(("elpa" . "https://elpa.emacs-china.org/gnu/")
-			 ("melpa" . "https://elpa.emacs-china.org/melpa/")
-                         ("org" . "https://elpa.emacs-china.org/org/")))
+;; (setq package-archives '(("elpa" . "https://elpa.emacs-china.org/gnu/")
+;; 			 ("melpa" . "https://elpa.emacs-china.org/melpa/")
+;;                          ("org" . "https://elpa.emacs-china.org/org/")))
+
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
 
 (package-initialize)
 (unless package-archive-contents
@@ -117,9 +124,9 @@
 (use-package which-key
   :ensure t
   :diminish which-key-mode
-  :init (which-key-mode)
-  :config
-  (setq which-key-idle-delay 0.1))
+  :init
+  (setq which-key-idle-delay 0.1)
+  (which-key-mode))
 
 (use-package ivy-rich
   :ensure t
@@ -158,15 +165,30 @@
   (general-create-definer w1/leader-key1
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
-    :global-prefix "C-c")
+    :non-normal-prefix "C-c")
 
   (w1/leader-key1
+    ;;maps
+    "w" '(evil-window-map :which-key "Window")
+    "h" '(help-command :which-key "Help")
+    "p" '(projectile-command-map :which-key "Projectile")
+
+    ;;keys
+    "SPC" '(counsel-M-x :which-key "Execute")
+    "M-x" 'eval-expression
+
+    "a" '(avy-goto-char-2 :which-key "Avy")
+    "g" '(magit-status :which-key "Magit")
+    "u" 'universal-argument
+    
     "o" '(:ignore t :which-key "custom entry")
     "ot" '(counsel-load-theme :which-key "choose theme")
     "oy" '(youdao-dictionary-search-at-point :which-key "Youdao Dict"))
 
   (general-define-key :keymaps 'evil-insert-state-map
-		      (general-chord "jk") 'evil-normal-state))
+                      (general-chord "jk") 'evil-normal-state)
+  (general-define-key
+   (general-chord ",,") 'evilnc-comment-or-uncomment-lines))
 
 (use-package evil
   :ensure t
@@ -220,10 +242,15 @@
    "os" '(hydra-text-scale/body :which-key "scale text")))
 
 (use-package avy
-  :ensure t)
+  :ensure t
+  :custom
+  (avy-all-windows nil))
 
 (use-package youdao-dictionary
   :ensure t
+  :custom
+  (url-automatic-caching t)
+  (youdao-dictionary-search-history-file (concat user-emacs-directory ".youdao"))
   :config
   (general-define-key
    :states 'normal
@@ -235,13 +262,51 @@
   :diminish key-chord-mode
   :init (key-chord-mode 1))
 
+(use-package evil-nerd-commenter
+  :ensure t)
+
+(use-package auto-package-update
+  :ensure t
+  :custom
+  (auto-package-update-delete-old-versions t)
+  (auto-package-update-interval 14)
+  (auto-package-update-prompt-before-update t)
+  :config
+  (auto-package-update-maybe))
+
+(use-package projectile
+  :ensure t
+  :diminish projectile-mode
+  :init
+  (projectile-mode)
+  (when (file-directory-p "~/Projects")
+    (setq projectile-project-search-path '("~/Projects")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :ensure t
+  :diminish counsel-peojectile-mode
+  :after projectile
+  :init (counsel-projectile-mode))
+
+(use-package magit
+  :ensure t
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+  :hook (git-commit-mode . evil-insert-state))
+
+(use-package git-gutter
+  :ensure t
+  :diminish git-gutter-mode
+  :init (global-git-gutter-mode))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(youdao-dictionary key-chord keychord hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
+   '(evil-magit git-gutter magit counsel-projectile projectile auto-package-update evil-nerd-commenter youdao-dictionary key-chord keychord hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
