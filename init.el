@@ -126,6 +126,7 @@
   :diminish which-key-mode
   :init
   (setq which-key-idle-delay 0.1)
+  (setq which-key-sort-order 'which-key-key-order-alpha)
   (which-key-mode))
 
 (use-package ivy-rich
@@ -161,19 +162,55 @@
 
 (use-package general
   :ensure t
+  :after evil
   :config
   (general-create-definer w1/leader-key1
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
     :non-normal-prefix "C-c")
 
+  (general-def help-map
+  ;; new keybinds
+  "'"    #'describe-char
+
+  ;; Unbind `help-for-help'. Conflicts with which-key's help command for the
+  ;; <leader> h prefix. It's already on ? and F1 anyway.
+  "C-h"  nil
+
+  ;; replacement keybinds
+  ;; replaces `info-emacs-manual' b/c it's on C-m now
+  "r"    nil
+
+  "b"   #'describe-bindings
+
+  ;; replaces `apropos-command'
+  "a"    #'apropos
+  "A"    #'apropos-documentation
+  ;; replaces `describe-copying' b/c not useful
+  "C-c"  #'describe-coding-system
+  ;; replaces `Info-got-emacs-command-node' b/c redundant w/ `Info-goto-node'
+  "F"    #'describe-face
+  ;; replaces `view-hello-file' b/c annoying
+  "h"    nil
+  ;; replaces `view-emacs-news' b/c it's on C-n too
+  "n"    #'doom/help-news
+  ;; replaces `help-with-tutorial', b/c it's less useful than `load-theme'
+  "t"    #'counsel-load-theme
+  ;; replaces `finder-by-keyword' b/c not useful
+  "p"    nil
+  )
+
+  (general-def evil-window-map
+    "c" nil
+    "d" #'evil-window-delete)
+  
   (w1/leader-key1
-    ;;maps
+    ;; maps
     "w" '(evil-window-map :which-key "Window")
     "h" '(help-command :which-key "Help")
     "p" '(projectile-command-map :which-key "Projectile")
 
-    ;;keys
+    ;; keys
     "SPC" '(counsel-M-x :which-key "Execute")
     "M-x" 'eval-expression
 
@@ -181,11 +218,42 @@
     "g" '(magit-status :which-key "Magit")
     "u" 'universal-argument
     
-    "o" '(:ignore t :which-key "custom entry")
-    "ot" '(counsel-load-theme :which-key "choose theme")
+    ;; buffer
+    "b" '(:ignore t :which-key "Buffer")
+    "bp" '(previous-buffer :which-key "Previous Buffer")
+    "bn" '(next-buffer :which-key "Next Buffer")
+    "bb" '(switch-to-buffer :which-key "Switch Buffer")
+    "bc" '(clone-indirect-buffer :which-key "Clone Buffer")
+    "bd" '(kill-current-buffer :which-key "Kill Buffer")
+    "bi" 'ibuffer
+    "bm" '(bookmark-set :which-key "Set Bookmark")
+    "bM" '(bookmark-delete :which-key "Delete Bookmark")
+;; investigate bookmarks
+    "bN" '(evil-buffer-new :which-key "New Empty Buffer")
+    "br" '(revert-buffer :which-key "Revert Buffer")
+    "bs" '(basic-save-buffer :which-key "Save Buffer")
+    "bS" '(evil-write-all :which-key "Save All Buffers")
+    
+    ;; file
+    "f" '(:ignore t :which-key "File")
+    "fd" '(dired :which-key "Dired")
+    "ff" '(find-file :which-key "Find File")
+    "fs" '(save-buffer :which-key "Save File")
+    "fS" '(write-file :which-key "Save File As")
+    
+    ;; quit
+    "q" '(:ignore t :which-key "Quit")
+    "qf" '(delete-frame :which-key "Delete Frame")
+    "qq" '(save-buffers-kill-terminal :which-key "Quit Emacs")
+    
+    ;; custom
+    "o" '(:ignore t :which-key "Custom Entry")
+    "ot" '(counsel-load-theme :which-key "Choose Theme")
     "oy" '(youdao-dictionary-search-at-point :which-key "Youdao Dict"))
 
   (general-define-key :keymaps 'evil-insert-state-map
+                      (general-chord "jk") 'evil-normal-state)
+  (general-define-key :keymaps 'evil-visual-state-map
                       (general-chord "jk") 'evil-normal-state)
   (general-define-key
    (general-chord ",,") 'evilnc-comment-or-uncomment-lines))
