@@ -157,7 +157,7 @@
   (doom-themes-enable-bold t)
   (doom-themes-enable-italic t)
   :config
-  (load-theme 'doom-molokai t)
+  (load-theme 'doom-gruvbox t)
   (doom-themes-org-config))
 
 (use-package general
@@ -167,7 +167,7 @@
   (general-create-definer w1/leader-key1
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
-    :non-normal-prefix "C-c")
+    :non-normal-prefix "C-q")
 
   (general-def help-map
   ;; new keybinds
@@ -367,6 +367,11 @@
   :ensure t
   :diminish git-gutter-mode
   :init (global-git-gutter-mode))
+
+(use-package org
+  :ensure t
+  :hook (org-mode . (lambda () (electric-indent-local-mode -1)))
+  )
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
