@@ -308,12 +308,24 @@
   :ensure t
   :config
   (defhydra hydra-text-scale (:timeout 4)
-  "scale text"
-  ("j" text-scale-increase "in")
-  ("k" text-scale-decrease "out")
-  ("f" nil "finished" :exit t))
+    "Scale text"
+    ("j" text-scale-increase "in")
+    ("k" text-scale-decrease "out")
+    ("q" nil "quit" :exit t))
   (w1/leader-key1
-   "os" '(hydra-text-scale/body :which-key "scale text")))
+    "os" '(hydra-text-scale/body :which-key "Scale text"))
+
+  (defhydra hydra-window-resize (:timeout 4)
+    "Resize window"
+    ("j" evil-window-increase-height "Increase height")
+    ("k" evil-window-decrease-height "Decrease height")
+    ("h" evil-window-decrease-width "Decrease width")
+    ("l" evil-window-increase-width "Increase width")
+    ("SPC" balance-windows "Balance windows")
+    ("q" nil "quit" :exit t))
+  (w1/leader-key1
+    "wr" '(hydra-window-resize/body :which-key "Window resize"))
+  )
 
 (use-package avy
   :ensure t
