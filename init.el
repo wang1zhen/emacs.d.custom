@@ -10,6 +10,9 @@
 (tooltip-mode -1)           ; Disable tooltips
 (set-fringe-mode 10)        ; 左右边框
 
+;; Scratch buffer settings
+(setq initial-scratch-message ";; Happy Emacsing\n\n")
+
 ;; Column number in the modeline
 (column-number-mode t)
 
@@ -158,6 +161,7 @@
   (doom-themes-enable-italic t)
   :config
   (load-theme 'doom-gruvbox t)
+  (doom-themes-visual-bell-config)
   (doom-themes-org-config))
 
 (use-package general
@@ -167,7 +171,7 @@
   (general-create-definer w1/leader-key1
     :keymaps '(normal insert visual emacs)
     :prefix "SPC"
-    :non-normal-prefix "C-q")
+    :non-normal-prefix (general-chord ",,"))
 
   (general-def help-map
   ;; new keybinds
@@ -256,7 +260,7 @@
   (general-define-key :keymaps 'evil-visual-state-map
                       (general-chord "jk") 'evil-normal-state)
   (general-define-key
-   (general-chord ",,") 'evilnc-comment-or-uncomment-lines))
+   (general-chord ";;") 'evilnc-comment-or-uncomment-lines))
 
 (use-package evil
   :ensure t
@@ -290,6 +294,8 @@
   (evil-global-set-key 'visual (kbd "C-p") 'previous-line)
   (evil-global-set-key 'visual (kbd "C-a") 'move-beginning-of-line)
   (evil-global-set-key 'visual (kbd "C-e") 'move-end-of-line)
+
+  (evil-global-set-key 'insert (kbd "C-u") 'undo)
   )
 
 (use-package evil-collection
@@ -368,10 +374,40 @@
   :diminish git-gutter-mode
   :init (global-git-gutter-mode))
 
+(defun w1/org-mode-setup ()
+  (auto-fill-mode 0)
+  (visual-line-mode 1))
+
 (use-package org
   :ensure t
-  :hook (org-mode . (lambda () (electric-indent-local-mode -1)))
+  ;; :hook (org-mode . (lambda () (electric-indent-local-mode -1)))
+  :bind
+  (:map org-mode-map ("C-j" . org-meta-return)) ;; This is for Ctrl+Enter in terminal mode
+  :hook (org-mode . w1/org-mode-setup)
+  :custom
+  (org-ellipsis " ▾")
+  (org-hide-emphasis-markers nil) ;; Show bold and italic verbosely
+  (org-link-descriptive nil) ;; Show links verbosely
+  (org-hide-leading-stars t)
   )
+
+(use-package org-superstar
+  :ensure t
+  :diminish org-superstar-mode
+  :after org
+  :hook (org-mode . (lambda () (org-superstar-mode 1)))
+  :custom
+  (org-superstar-headline-bullets-list '("■" "◆" "▲" "▶"))
+  (org-superstar-cycle-headline-bullets nil)
+  (org-superstar-prettify-item-bullets nil)
+  )
+
+(use-package evil-terminal-cursor-changer
+  :ensure t
+  :init
+  (unless (display-graphic-p)
+    (evil-terminal-cursor-changer-activate) ;; or (etcc-on)
+    ))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -379,7 +415,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(evil-magit git-gutter magit counsel-projectile projectile auto-package-update evil-nerd-commenter youdao-dictionary key-chord keychord hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
+   '(org-superstar evil-terminal-cursor-changer evil-magit git-gutter magit counsel-projectile projectile auto-package-update evil-nerd-commenter youdao-dictionary key-chord keychord hydra avy evil-collection evil general amx doom-themes undo-fu helpful ivy-rich which-key rainbow-delimiters ranbow-delimiters ranbow-delimeters counsel swiper ivy command-log-mode use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
