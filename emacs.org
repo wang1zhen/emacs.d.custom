@@ -1,0 +1,558 @@
+#+TITLE: wang1zhen's custom emacs config file in org-mode
+#+AUTHOR: wang1zhen
+#+EMAIL: wang1zhen97@gmail.com
+#+Date: <2021-09-07 Tue>
+#+STARTUP: content
+#+PROPERTY: header-args :emacs-lisp :results silent :tangle (concat "~/emacs.d.custom/" "init.el") :mkdirp yes
+
+* Basic settings
+
+** Config file
+   #+begin_src emacs-lisp
+     (setq user-init-file (or load-file-name (buffer-file-name)))
+     (setq user-emacs-directory (file-name-directory user-init-file))
+     (setq init-file-user "") ;; Without setting it, amx would not save the history
+   #+end_src
+
+** Miscellaneous configurations
+   #+begin_src emacs-lisp
+     ;; Allow interactive tangle
+     (add-to-list 'safe-local-eval-forms '(add-hook 'after-save-hook (lambda () (if (y-or-n-p "Tangle?") (org-babel-tangle))) nil t))
+
+     ;; Use the system clipboard
+     (setq x-select-enable-clipboard t)
+
+     ;; Always focus the help window
+     (setq help-window-select t)
+   #+end_src
+* Package System
+  #+begin_src emacs-lisp
+    ;; Initialize package sources
+    (require 'package)
+
+    ;; (setq package-archives '(("elpa" . "https://elpa.emacs-china.org/gnu/")
+    ;; 			 ("melpa" . "https://elpa.emacs-china.org/melpa/")
+    ;;                          ("org" . "https://elpa.emacs-china.org/org/")))
+
+    (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			     ("org" . "https://orgmode.org/elpa/")
+			     ("elpa" . "https://elpa.gnu.org/packages/")))
+
+    (package-initialize)
+    (unless package-archive-contents
+      (package-refresh-contents))
+
+    ;; install use-package
+    (unless (package-installed-p 'use-package)
+      (package-install 'use-package))
+    (require 'use-package)
+  #+end_src
+** Auto-package-update
+   Automatically update the packages every 14 days (with prompts), and you can also call =auto-package-update-now= to manually update.
+   #+begin_src emacs-lisp
+     (use-package auto-package-update
+       :ensure t
+       :custom
+       (auto-package-update-delete-old-versions t)
+       (auto-package-update-interval 14)
+       (auto-package-update-prompt-before-update t)
+       :config
+       (auto-package-update-maybe))
+   #+end_src
+  
+* Basic UI
+  #+begin_src emacs-lisp
+    (setq inhibit-startup-message t)
+    (scroll-bar-mode -1) ;; Disable visible scrollbar
+    (tool-bar-mode -1) ;; Disable the toolbar
+    (menu-bar-mode -1) ;; Disable the menu bar
+    (tooltip-mode -1) ;; Disable tooltips
+    (set-fringe-mode 10) ;; 左右边框
+    (global-auto-revert-mode)
+    (defalias 'yes-or-no-p 'y-or-n-p)
+
+    ;; Scratch buffer settings
+    (setq initial-scratch-message ";; Happy Emacsing\n\n")
+
+    ;; Column number in the modeline
+    (column-number-mode t)
+
+    ;; Line numbers
+    (global-display-line-numbers-mode t)
+    ;; Disable for some modes
+    (dolist (mode '(org-mode-hook
+		    term-mode-hook
+		    eshell-mode-hook))
+      (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+    ;; Visual bell
+    (setq visible-bell t)
+  #+end_src
+
+* Fonts
+  The font settings are mainly for GUI Emacs, this would not affect TUI Emacs.
+  #+begin_src emacs-lisp
+    (require 'cl-lib)
+
+    (defun font-installed-p (font-name)
+      "Check if font with FONT-NAME is available."
+      (find-font (font-spec :name font-name)))
+
+    (when (display-graphic-p)
+      (cond
+       ((equal (system-name) "Pro14-wang1zhen") (setq font-size-factor 3))
+       ((equal (system-name) "Arch-X230") (setq font-size-factor 3))
+       ((equal (system-name) "PC-SH") (setq font-size-factor 3))
+       (t (setq font-size-factor 2)))
+
+      ;; Set default font
+      (cl-loop for font in '("CaskaydiaCove Nerd Font" "Cascadia Code"
+			     "FiraCode Nerd Font" "Fira Code"
+			     "Hack" "Source Code Pro" "Consolas")
+	       when (font-installed-p font)
+	       return (set-face-attribute 'default nil
+					  :font font
+					  :height (* font-size-factor 60)))
+
+      ;; Specify font for all unicode characters
+      (cl-loop for font in '("Apple Color Emoji" "Segoe UI Symbol" "Symbola" "Symbol")
+	       when (font-installed-p font)
+	       return(set-fontset-font t 'unicode font nil 'prepend))
+
+      ;; Specify font for Chinese characters
+      (cl-loop for font in '("Sarasa Mono SC" "WenQuanYi Micro Hei Mono" "Microsoft Yahei")
+	       when (font-installed-p font)
+	       return (set-fontset-font t '(#x4e00 . #x9fff) font)))
+    ;; 字体检查 言 ♪
+  #+end_src
+
+* Keybindings
+  #+begin_src emacs-lisp
+    ;; Make ESC quit prompts
+    (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+  #+end_src
+
+** Evil
+   Evil is a vim emulator for Emacs. I use Emacs keybindings to move cursor within the insert state, so I disabled insert state bindings.
+   Evil-collection has a lot of good keybindings to enhance the experience with evil.
+   #+begin_src emacs-lisp
+     (use-package evil
+       :ensure t
+       :init
+       (setq
+	evil-want-integration t
+	evil-want-keybinding nil
+	evil-want-C-u-scroll t
+	evil-want-C-i-jump nil
+	evil-disable-insert-state-bindings t)
+       ;;  :hook
+       :config
+       (evil-mode 1)
+       (evil-global-set-key 'insert (kbd "C-g") 'evil-normal-state)
+
+       ;; Visual line motions
+       (evil-global-set-key 'motion "j" 'evil-next-visual-line)
+       (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
+
+       ;; Emacs flavour moving in normal and visual mode
+       (evil-global-set-key 'normal (kbd "C-f") 'forward-char)
+       (evil-global-set-key 'normal (kbd "C-b") 'backward-char)
+       (evil-global-set-key 'normal (kbd "C-n") 'next-line)
+       (evil-global-set-key 'normal (kbd "C-p") 'previous-line)
+       (evil-global-set-key 'normal (kbd "C-a") 'move-beginning-of-line)
+       (evil-global-set-key 'normal (kbd "C-e") 'move-end-of-line)
+
+       (evil-global-set-key 'visual (kbd "C-f") 'forward-char)
+       (evil-global-set-key 'visual (kbd "C-b") 'backward-char)
+       (evil-global-set-key 'visual (kbd "C-n") 'next-line)
+       (evil-global-set-key 'visual (kbd "C-p") 'previous-line)
+       (evil-global-set-key 'visual (kbd "C-a") 'move-beginning-of-line)
+       (evil-global-set-key 'visual (kbd "C-e") 'move-end-of-line)
+
+       (evil-global-set-key 'insert (kbd "C-u") 'undo)
+       )
+
+     (use-package evil-collection
+       :ensure t
+       :after evil
+       :config
+       (evil-collection-init))
+   #+end_src
+** General
+   General helps to manage the keybindings. Here is where most keybinding settings are configured.
+   #+begin_src emacs-lisp
+     ;; Define split-window-below-and-focus and split-window-right-and-focus
+     (defun evil-window-split-and-focus ()
+       "Split the window vertically and focus the new window."
+       (interactive)
+       (evil-window-split)
+       (windmove-down))
+
+     (defun evil-window-vsplit-and-focus ()
+       "Split the window horizontally and focus the new window."
+       (interactive)
+       (split-window-right)
+       (windmove-right))
+
+     (use-package general
+       :ensure t
+       :after evil
+       :config
+       (general-create-definer w1/leader-key1
+	 :keymaps '(normal insert visual emacs)
+	 :prefix "SPC"
+	 :non-normal-prefix (general-chord ",,"))
+
+       (general-def help-map
+	 ;; new keybinds
+	 "'"    #'describe-char
+
+	 ;; Unbind `help-for-help'. Conflicts with which-key's help command for the
+	 ;; <leader> h prefix. It's already on ? and F1 anyway.
+	 "C-h"  nil
+
+	 ;; replacement keybinds
+	 ;; replaces `info-emacs-manual' b/c it's on C-m now
+	 "r"    nil
+
+	 "b"   #'describe-bindings
+
+	 ;; replaces `apropos-command'
+	 "a"    #'apropos
+	 "A"    #'apropos-documentation
+	 ;; replaces `describe-copying' b/c not useful
+	 "C-c"  #'describe-coding-system
+	 ;; replaces `Info-got-emacs-command-node' b/c redundant w/ `Info-goto-node'
+	 "F"    #'describe-face
+	 ;; replaces `view-hello-file' b/c annoying
+	 "h"    nil
+	 ;; replaces `view-emacs-news' b/c it's on C-n too
+	 "n"    #'doom/help-news
+	 ;; replaces `help-with-tutorial', b/c it's less useful than `load-theme'
+	 "t"    #'counsel-load-theme
+	 ;; replaces `finder-by-keyword' b/c not useful
+	 "p"    nil
+	 )
+
+       (general-def evil-window-map
+	 "c" nil
+	 "d" #'evil-window-delete)
+
+       (w1/leader-key1
+	 ;; maps
+	 "h" '(help-command :which-key "Help")
+	 "p" '(projectile-command-map :which-key "Projectile")
+
+	 ;; keys
+	 "SPC" '(counsel-M-x :which-key "Execute")
+	 "M-x" 'eval-expression
+
+	 ;; window
+	 "w" '(evil-window-map :which-key "Window")
+	 "ws" 'evil-window-split-and-focus
+	 "wv" 'evil-window-vsplit-and-focus
+
+	 "a" '(avy-goto-char-2 :which-key "Avy")
+	 "g" '(magit-status :which-key "Magit")
+	 "u" 'universal-argument
+
+	 ;; buffer
+	 "b" '(:ignore t :which-key "Buffer")
+	 "bp" '(previous-buffer :which-key "Previous Buffer")
+	 "bn" '(next-buffer :which-key "Next Buffer")
+	 "bb" '(switch-to-buffer :which-key "Switch Buffer")
+	 "bc" '(clone-indirect-buffer :which-key "Clone Buffer")
+	 "bd" '(kill-current-buffer :which-key "Kill Buffer")
+	 "bi" 'ibuffer
+	 "bm" '(bookmark-set :which-key "Set Bookmark")
+	 "bM" '(bookmark-delete :which-key "Delete Bookmark")
+	 ;; investigate bookmarks
+	 "bN" '(evil-buffer-new :which-key "New Empty Buffer")
+	 "br" '(revert-buffer :which-key "Revert Buffer")
+	 "bs" '(basic-save-buffer :which-key "Save Buffer")
+	 "bS" '(evil-write-all :which-key "Save All Buffers")
+
+	 ;; file
+	 "f" '(:ignore t :which-key "File")
+	 "fd" '(dired :which-key "Dired")
+	 "ff" '(find-file :which-key "Find File")
+	 "fs" '(save-buffer :which-key "Save File")
+	 "fS" '(write-file :which-key "Save File As")
+
+	 ;; quit
+	 "q" '(:ignore t :which-key "Quit")
+	 "qf" '(delete-frame :which-key "Delete Frame")
+	 "qq" '(save-buffers-kill-terminal :which-key "Quit Emacs")
+
+	 ;; custom
+	 "o" '(:ignore t :which-key "Custom Entry")
+	 "ot" '(counsel-load-theme :which-key "Choose Theme")
+	 "oy" '(youdao-dictionary-search-at-point :which-key "Youdao Dict"))
+
+       (general-define-key :keymaps 'evil-insert-state-map
+			   (general-chord "jk") 'evil-normal-state)
+       (general-define-key :keymaps 'evil-visual-state-map
+			   (general-chord "jk") 'evil-normal-state)
+       (general-define-key
+	(general-chord ";;") 'evilnc-comment-or-uncomment-lines))
+   #+end_src
+** Key-chord
+   Key-chord enhances keybindings, providing keybindings like "jk" or ";;"
+   #+begin_src emacs-lisp
+     (use-package key-chord
+       :ensure t
+       :diminish key-chord-mode
+       :init (key-chord-mode 1))
+   #+end_src
+** Hydra
+   Hydra provides keybindings for convenience.
+   #+begin_src emacs-lisp
+     (use-package hydra
+       :ensure t
+       :config
+       (defhydra hydra-text-scale (:timeout 4)
+	 "Scale text"
+	 ("j" text-scale-increase "in")
+	 ("k" text-scale-decrease "out")
+	 ("q" nil "quit" :exit t))
+       (w1/leader-key1
+	 "os" '(hydra-text-scale/body :which-key "Scale text"))
+
+       (defhydra hydra-window-resize (:timeout 4)
+	 "Resize window"
+	 ("j" evil-window-increase-height "Increase height")
+	 ("k" evil-window-decrease-height "Decrease height")
+	 ("h" evil-window-decrease-width "Decrease width")
+	 ("l" evil-window-increase-width "Increase width")
+	 ("SPC" balance-windows "Balance windows")
+	 ("q" nil "quit" :exit t))
+       (w1/leader-key1
+	 "wr" '(hydra-window-resize/body :which-key "Window resize")))
+   #+end_src
+** Undo-fu
+   Undo-fu makes the undo and redo commands behave nomally.
+   #+begin_src emacs-lisp
+     (use-package undo-fu
+       :ensure t
+       :bind
+       ("C-/" . undo-fu-only-undo)
+       ("C-r" . undo-fu-only-redo)
+       ("C-x r" . undo-fu-only-redo))
+   #+end_src
+** Avy
+   Move cursor to the target easily, bound to =SPC a=.
+   #+begin_src emacs-lisp
+     (use-package avy
+       :ensure t
+       :custom
+       (avy-all-windows nil))
+   #+end_src
+** evil-nerd-commenter
+   Comment and uncomment with ease.
+   #+begin_src emacs-lisp
+     (use-package evil-nerd-commenter
+       :ensure t)
+   #+end_src
+* UI Configuration
+** Command-log-mode
+   Display the keystrokes and command with the keys.
+   #+begin_src emacs-lisp
+     (use-package command-log-mode
+       :ensure t)
+   #+end_src
+** All-the-icons
+   Installs extra icons in font for GUI mode, remember to =M-x all-the-icons-install-fonts= to install after package installation.
+   #+begin_src emacs-lisp
+     (use-package all-the-icons
+       :ensure t)
+   #+end_src
+** Doom-themes
+   Doom-themes, for TUI the gruvbox seems to be the best.
+   #+begin_src emacs-lisp
+     (use-package doom-themes
+       :ensure t
+       :custom
+       (doom-themes-enable-bold t)
+       (doom-themes-enable-italic t)
+       :config
+       (load-theme 'doom-gruvbox t)
+       (doom-themes-visual-bell-config)
+       (doom-themes-org-config))
+   #+end_src
+** Doom-modeline
+   A more powerful modeline extension.
+   #+begin_src emacs-lisp
+     (use-package doom-modeline
+       :ensure t
+       :diminish doom-modeline-mode
+       :init (doom-modeline-mode 1))
+   #+end_src
+** Which-key
+   Which-key gives hints for keys.
+   #+begin_src emacs-lisp
+     (use-package which-key
+       :ensure t
+       :diminish which-key-mode
+       :init
+       (setq which-key-idle-delay 0.1)
+       (setq which-key-sort-order 'which-key-key-order-alpha)
+       (which-key-mode))
+   #+end_src
+** Ivy, Swiper, Counsel and amx
+   The Ivy bundle. Amx provides enhancements to ivy and counsel.
+   #+begin_src emacs-lisp
+     (use-package ivy
+       :ensure t
+       :diminish ivy-mode
+       :init (ivy-mode 1)
+       :custom
+       (ivy-use-selectable-prompt 1)
+       (ivy-initial-inputs-alist nil))
+
+     (use-package ivy-rich
+       :ensure t
+       :diminish ivy-rich-mode
+       :init (ivy-rich-mode 1))
+
+     (use-package swiper
+       :ensure t
+       :bind (("C-s" . swiper)))
+
+     (use-package counsel
+       :ensure t
+       :diminish counsel-mode
+       :init (counsel-mode 1))
+
+     (use-package amx
+       :ensure t)
+       #+end_src
+** Helpful
+   Helpful provides enhancements to Emacs built-in help.
+   #+begin_src emacs-lisp
+     (use-package helpful
+       :ensure t
+       :custom
+       (counsel-describe-function-function #'helpful-callable)
+       (counsel-describe-variable-function #'helpful-variable)
+       :bind
+       ([remap describe-function] . counsel-describe-function)
+       ([remap describe-variable] . counsel-describe-variable)
+       ([remap describe-key] . helpful-key))
+   #+end_src 
+** Rainbow-delimiters
+   Pair parentheses with different colors.
+   #+begin_src emacs-lisp
+     (use-package rainbow-delimiters
+       :ensure t
+       :diminish rainbow-delimiters-mode
+       :hook (prog-mode . rainbow-delimiters-mode))
+   #+end_src
+* Org mode
+** Basic setup
+   #+begin_src emacs-lisp
+     (defun w1/org-mode-setup ()
+       ;; (electric-indent-local-mode -1)
+       (auto-fill-mode 0)
+       (visual-line-mode 1))
+
+     (use-package org
+       :ensure t
+       :bind
+       (:map org-mode-map ("C-j" . org-meta-return)) ;; This is for Ctrl+Enter in terminal mode
+       :hook (org-mode . w1/org-mode-setup)
+       :config
+       (add-to-list 'org-modules 'org-tempo)
+       (add-to-list 'org-src-lang-modes '("conf-unix" . conf-unix))
+       (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+       (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+       (add-to-list 'org-structure-template-alist '("py" . "src python"))
+       (add-to-list 'org-structure-template-alist '("la" . "src latex"))
+       (add-to-list 'org-structure-template-alist '("conf" . "src conf-unix"))
+       (org-babel-do-load-languages
+	'org-babel-load-languages
+	'((emacs-lisp . t)
+	  (shell . t)
+	  (latex . t)
+	  (python . t)))
+       :custom
+       (org-ellipsis " ▾")
+       (org-hide-emphasis-markers nil) ;; Show bold and italic verbosely
+       (org-link-descriptive nil) ;; Show links verbosely
+       (org-hide-leading-stars t))
+   #+end_src
+** Org-superstar
+   #+begin_src emacs-lisp
+     (use-package org-superstar
+       :ensure t
+       :diminish org-superstar-mode
+       :after org
+       :hook (org-mode . (lambda () (org-superstar-mode 1)))
+       :custom
+       (org-superstar-headline-bullets-list '("■" "◆" "▲" "▶"))
+       (org-superstar-cycle-headline-bullets nil)
+       (org-superstar-prettify-item-bullets nil))
+   #+end_src
+* Development
+** Projectile
+   #+begin_src emacs-lisp
+     (use-package projectile
+       :ensure t
+       :diminish projectile-mode
+       :init
+       (projectile-mode)
+       (when (file-directory-p "~/Projects")
+	 (setq projectile-project-search-path '("~/Projects")))
+       (setq projectile-switch-project-action #'projectile-dired))
+
+     (use-package counsel-projectile
+       :ensure t
+       :diminish counsel-peojectile-mode
+       :after projectile
+       :init (counsel-projectile-mode))
+   #+end_src
+** Magit
+   #+begin_src emacs-lisp
+     (use-package magit
+       :ensure t
+       :custom
+       (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+       :hook (git-commit-mode . evil-insert-state))
+   #+end_src
+** Git-gutter
+   Show insertion, deletion and modification on the left.
+   #+begin_src emacs-lisp
+     (use-package git-gutter
+       :ensure t
+       :diminish git-gutter-mode
+       :init (global-git-gutter-mode))
+   #+end_src 
+* Miscellaneous
+** Youdao-dictionary
+   #+begin_src emacs-lisp
+     (use-package youdao-dictionary
+       :ensure t
+       :custom
+       (url-automatic-caching t)
+       (youdao-dictionary-search-history-file (concat user-emacs-directory ".youdao"))
+       :config
+       (general-define-key
+	:states 'normal
+	:keymaps 'youdao-dictionary-mode-map
+	"q" 'quit-window))
+   #+end_src 
+** Evil-terminal-cursor-changer
+   For TUI Emacs, change the cursor shape (bar/box) automatically.
+   #+begin_src emacs-lisp
+     (use-package evil-terminal-cursor-changer
+       :ensure t
+       :init
+       (unless (display-graphic-p)
+	 (evil-terminal-cursor-changer-activate) ;; or (etcc-on)
+	 ))
+   #+end_src
+* Local Variables
+  Local variables should be placed at the end of this file
+
+;; Local Variables: 
+;; eval: (add-hook 'after-save-hook (lambda () (if (y-or-n-p "Tangle?") (org-babel-tangle))) nil t)
+;; End:

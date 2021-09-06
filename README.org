@@ -1,0 +1,24 @@
+* About this repository
+
+  Here is wang1zhen's personal configuration for emacs, inspired by System Crafters' [[https://github.com/daviwil/emacs-from-scratch][Emacs from scratch]], hlissner's [[https://github.com/hlissner/doom-emacs][Doom Emacs]], syl20bnr's [[https://github.com/syl20bnr/spacemacs][Spacemacs]], seagle0128's [[https://github.com/seagle0128/.emacs.d][Centaur Emacs]], and lots of other emacs starter kits and codes from Reddit and stackoverflow. I merely wish to build by own emacs configuration, mostly based on the terminal modes.
+
+
+* How to use the config
+
+  1. Clone the repository
+     #+begin_src shell
+       git clone https://github.com/wang1zhen/emacs.d.custom ~/emacs.d.custom
+     #+end_src
+  2. Tangle the org file into =init.el=
+     #+begin_src shell
+       emacs -q ~/.emacs.d.custom/emacs.org
+     #+end_src
+     For the first time loading the org file, you might be prompted for permission of local variables, please type =y= to enable it.
+     Then press =C-c C-v t= or =M-x org-babel-tangle= to tangle the org file into =init.el=.
+     After =org-babel-tangle= is finished, =C-x C-c= to quit emacs.
+  3. Create alias for the custom emacs configuration in zsh
+     #+begin_src shell
+       echo 'alias ee="emacs -q -l ~/emacs.d.custom/init.el"' >> ~/.zshrc
+       source ~/.zshrc
+     #+end_src
+  4. Use =ee= to launch emacs
