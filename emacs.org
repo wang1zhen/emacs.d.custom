@@ -5,9 +5,10 @@
 #+STARTUP: content
 #+PROPERTY: header-args :emacs-lisp :results silent :tangle (concat "~/emacs.d.custom/" "init.el") :mkdirp yes
 
-* Basic settings
+* Basic Settings
 
 ** Config file
+
    #+begin_src emacs-lisp
      (setq user-init-file (or load-file-name (buffer-file-name)))
      (setq user-emacs-directory (file-name-directory user-init-file))
@@ -15,6 +16,7 @@
    #+end_src
 
 ** Miscellaneous configurations
+
    #+begin_src emacs-lisp
      ;; Allow interactive tangle
      (add-to-list 'safe-local-eval-forms '(add-hook 'after-save-hook (lambda () (if (y-or-n-p "Tangle?") (org-babel-tangle))) nil t))
@@ -24,8 +26,16 @@
 
      ;; Always focus the help window
      (setq help-window-select t)
+
+     ;; Delete trailing whitespaces
+     (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+     ;; Enable mouse in terminal mode
+     (xterm-mouse-mode)
    #+end_src
+
 * Package System
+
   #+begin_src emacs-lisp
     ;; Initialize package sources
     (require 'package)
@@ -48,6 +58,7 @@
     (require 'use-package)
   #+end_src
 ** Auto-package-update
+
    Automatically update the packages every 14 days (with prompts), and you can also call =auto-package-update-now= to manually update.
    #+begin_src emacs-lisp
      (use-package auto-package-update
@@ -59,8 +70,18 @@
        :config
        (auto-package-update-maybe))
    #+end_src
-  
+
+** Try
+
+   Try some packages for test.
+   #+begin_src emacs-lisp
+     (use-package try
+       :commands try
+       :ensure t)
+   #+end_src
+
 * Basic UI
+
   #+begin_src emacs-lisp
     (setq inhibit-startup-message t)
     (scroll-bar-mode -1) ;; Disable visible scrollbar
@@ -68,8 +89,11 @@
     (menu-bar-mode -1) ;; Disable the menu bar
     (tooltip-mode -1) ;; Disable tooltips
     (set-fringe-mode 10) ;; 左右边框
-    (global-auto-revert-mode)
     (defalias 'yes-or-no-p 'y-or-n-p)
+
+    ;; Auto revert, including dired buffers
+    (setq global-auto-revert-non-file-buffers t)
+    (global-auto-revert-mode)
 
     ;; Scratch buffer settings
     (setq initial-scratch-message ";; Happy Emacsing\n\n")
@@ -90,6 +114,7 @@
   #+end_src
 
 * Fonts
+
   The font settings are mainly for GUI Emacs, this would not affect TUI Emacs.
   #+begin_src emacs-lisp
     (require 'cl-lib)
@@ -127,12 +152,14 @@
   #+end_src
 
 * Keybindings
+
   #+begin_src emacs-lisp
     ;; Make ESC quit prompts
     (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
   #+end_src
 
 ** Evil
+
    Evil is a vim emulator for Emacs. I use Emacs keybindings to move cursor within the insert state, so I disabled insert state bindings.
    Evil-collection has a lot of good keybindings to enhance the experience with evil.
    #+begin_src emacs-lisp
@@ -178,7 +205,9 @@
        :config
        (evil-collection-init))
    #+end_src
+
 ** General
+
    General helps to manage the keybindings. Here is where most keybinding settings are configured.
    #+begin_src emacs-lisp
      ;; Define split-window-below-and-focus and split-window-right-and-focus
@@ -201,7 +230,7 @@
        (general-create-definer w1/leader-key1
 	 :keymaps '(normal insert visual emacs)
 	 :prefix "SPC"
-	 :non-normal-prefix (general-chord ",,"))
+	 :non-normal-prefix (general-chord ",."))
 
        (general-def help-map
 	 ;; new keybinds
@@ -251,6 +280,11 @@
 	 "w" '(evil-window-map :which-key "Window")
 	 "ws" 'evil-window-split-and-focus
 	 "wv" 'evil-window-vsplit-and-focus
+	 "1" '(winum-select-window-1 :which-key "Switch to window 1")
+	 "2" '(winum-select-window-2 :which-key "Switch to window 2")
+	 "3" '(winum-select-window-3 :which-key "Switch to window 3")
+	 "4" '(winum-select-window-4 :which-key "Switch to window 4")
+	 "5" '(winum-select-window-5 :which-key "Switch to window 5")
 
 	 "a" '(avy-goto-char-2 :which-key "Avy")
 	 "g" '(magit-status :which-key "Magit")
@@ -274,7 +308,7 @@
 
 	 ;; file
 	 "f" '(:ignore t :which-key "File")
-	 "fd" '(dired :which-key "Dired")
+	 "fd" '(dired-jump :which-key "Dired jump")
 	 "ff" '(find-file :which-key "Find File")
 	 "fs" '(save-buffer :which-key "Save File")
 	 "fS" '(write-file :which-key "Save File As")
@@ -294,9 +328,11 @@
        (general-define-key :keymaps 'evil-visual-state-map
 			   (general-chord "jk") 'evil-normal-state)
        (general-define-key
-	(general-chord ";;") 'evilnc-comment-or-uncomment-lines))
+	(general-chord ";'") 'evilnc-comment-or-uncomment-lines))
    #+end_src
+
 ** Key-chord
+
    Key-chord enhances keybindings, providing keybindings like "jk" or ";;"
    #+begin_src emacs-lisp
      (use-package key-chord
@@ -304,7 +340,9 @@
        :diminish key-chord-mode
        :init (key-chord-mode 1))
    #+end_src
+
 ** Hydra
+
    Hydra provides keybindings for convenience.
    #+begin_src emacs-lisp
      (use-package hydra
@@ -329,7 +367,9 @@
        (w1/leader-key1
 	 "wr" '(hydra-window-resize/body :which-key "Window resize")))
    #+end_src
+
 ** Undo-fu
+
    Undo-fu makes the undo and redo commands behave nomally.
    #+begin_src emacs-lisp
      (use-package undo-fu
@@ -339,7 +379,9 @@
        ("C-r" . undo-fu-only-redo)
        ("C-x r" . undo-fu-only-redo))
    #+end_src
+
 ** Avy
+
    Move cursor to the target easily, bound to =SPC a=.
    #+begin_src emacs-lisp
      (use-package avy
@@ -347,26 +389,34 @@
        :custom
        (avy-all-windows nil))
    #+end_src
-** evil-nerd-commenter
+
+** Evil-nerd-commenter
+
    Comment and uncomment with ease.
    #+begin_src emacs-lisp
      (use-package evil-nerd-commenter
        :ensure t)
    #+end_src
+
 * UI Configuration
 ** Command-log-mode
+
    Display the keystrokes and command with the keys.
    #+begin_src emacs-lisp
      (use-package command-log-mode
        :ensure t)
    #+end_src
+
 ** All-the-icons
+
    Installs extra icons in font for GUI mode, remember to =M-x all-the-icons-install-fonts= to install after package installation.
    #+begin_src emacs-lisp
      (use-package all-the-icons
        :ensure t)
    #+end_src
+
 ** Doom-themes
+
    Doom-themes, for TUI the gruvbox seems to be the best.
    #+begin_src emacs-lisp
      (use-package doom-themes
@@ -379,7 +429,9 @@
        (doom-themes-visual-bell-config)
        (doom-themes-org-config))
    #+end_src
+
 ** Doom-modeline
+
    A more powerful modeline extension.
    #+begin_src emacs-lisp
      (use-package doom-modeline
@@ -387,7 +439,9 @@
        :diminish doom-modeline-mode
        :init (doom-modeline-mode 1))
    #+end_src
+
 ** Which-key
+
    Which-key gives hints for keys.
    #+begin_src emacs-lisp
      (use-package which-key
@@ -398,7 +452,9 @@
        (setq which-key-sort-order 'which-key-key-order-alpha)
        (which-key-mode))
    #+end_src
+
 ** Ivy, Swiper, Counsel and amx
+
    The Ivy bundle. Amx provides enhancements to ivy and counsel.
    #+begin_src emacs-lisp
      (use-package ivy
@@ -425,8 +481,10 @@
 
      (use-package amx
        :ensure t)
-       #+end_src
+   #+end_src
+
 ** Helpful
+
    Helpful provides enhancements to Emacs built-in help.
    #+begin_src emacs-lisp
      (use-package helpful
@@ -438,7 +496,8 @@
        ([remap describe-function] . counsel-describe-function)
        ([remap describe-variable] . counsel-describe-variable)
        ([remap describe-key] . helpful-key))
-   #+end_src 
+   #+end_src
+
 ** Rainbow-delimiters
    Pair parentheses with different colors.
    #+begin_src emacs-lisp
@@ -447,8 +506,10 @@
        :diminish rainbow-delimiters-mode
        :hook (prog-mode . rainbow-delimiters-mode))
    #+end_src
-* Org mode
+
+* Org Mode
 ** Basic setup
+
    #+begin_src emacs-lisp
      (defun w1/org-mode-setup ()
        ;; (electric-indent-local-mode -1)
@@ -480,7 +541,9 @@
        (org-link-descriptive nil) ;; Show links verbosely
        (org-hide-leading-stars t))
    #+end_src
+
 ** Org-superstar
+
    #+begin_src emacs-lisp
      (use-package org-superstar
        :ensure t
@@ -492,8 +555,10 @@
        (org-superstar-cycle-headline-bullets nil)
        (org-superstar-prettify-item-bullets nil))
    #+end_src
+
 * Development
 ** Projectile
+
    #+begin_src emacs-lisp
      (use-package projectile
        :ensure t
@@ -510,7 +575,9 @@
        :after projectile
        :init (counsel-projectile-mode))
    #+end_src
+
 ** Magit
+
    #+begin_src emacs-lisp
      (use-package magit
        :ensure t
@@ -518,16 +585,104 @@
        (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
        :hook (git-commit-mode . evil-insert-state))
    #+end_src
+
 ** Git-gutter
+
    Show insertion, deletion and modification on the left.
    #+begin_src emacs-lisp
      (use-package git-gutter
        :ensure t
        :diminish git-gutter-mode
        :init (global-git-gutter-mode))
-   #+end_src 
+   #+end_src
+
+** LSP
+
+   LSP is the "Language Server Protocal". Not enabled for now.
+   #+begin_src emacs-lisp
+    ;; (use-package lsp-mode
+    ;;   :ensure t
+    ;;   :commands (lsp lsp-deferred)
+    ;;   :init
+    ;;   (setq lsp-keymap-prefix "C-c l")
+    ;;   :bind
+    ;;   (:map lsp-mode-map
+    ;; 	    ("<tab>" . company-indent-or-complete-common))
+    ;;   :hook
+    ;;   (prog-mode . lsp-deferred)
+    ;;   (lsp-mode . lsp-enable-which-key-integration))
+  #+end_src
+
+  #+begin_src emacs-lisp
+    ;; (use-package lsp-ui
+    ;;   :ensure t
+    ;;   :hook (lsp-mode . lsp-ui-mode))
+  #+end_src
+
+* Auto Complete
+
+** Company
+
+   Company is a text completion framework for Emacs. The name stands for "complete anything". It uses pluggable back-ends and front-ends to retrieve and display completion candidates.
+   #+begin_src emacs-lisp
+     (use-package company
+       :ensure t
+       :init (global-company-mode)
+       :bind
+       (:map company-active-map
+	     ("TAB" . company-complete-selection)
+	     ("<tab>" . company-complete-selection)
+	     ("RET" . newline)
+	     ("<return>" . newline))
+       :custom
+       (company-minimum-prefix-length 3)
+       (company-idle-delay 0.1))
+  #+end_src
+
+** Yasnippet (TBD)
+
+* File Management
+** Dired
+
+   Dired is the Emacs Built-in file manager. Dired-single inhibits new buffers being spawned when entering new directories, and dired-hide-dotfiles hides dotfiles by default.
+   #+begin_src emacs-lisp
+     (use-package dired
+       :ensure nil
+       :commands (dired dired-jump)
+       :config
+       (evil-collection-define-key 'normal 'dired-mode-map
+	 " " nil
+	 "h" 'dired-up-directory
+	 "l" 'dired-find-file)
+       :custom
+       ((dired-listing-switches "-alh --group-directories-first")
+	(dired-dwim-target t))
+
+       )
+
+     (use-package dired-single
+       :ensure t
+       :after dired
+       :bind
+       (:map dired-mode-map
+	     ([remap dired-find-file] . dired-single-buffer)
+	     ([remap dired-mouse-find-file-other-window] . dired-single-buffer-mouse)
+	     ([remap dired-up-directory] . dired-single-up-directory)))
+
+     (use-package dired-hide-dotfiles
+       :ensure t
+       :after dired
+       :hook (dired-mode . dired-hide-dotfiles-mode)
+       :config
+       (evil-collection-define-key 'normal 'dired-mode-map
+	 "H" 'dired-hide-dotfiles-mode))
+#+end_src
+
+** Recentf (TBD)
+
 * Miscellaneous
 ** Youdao-dictionary
+
    #+begin_src emacs-lisp
      (use-package youdao-dictionary
        :ensure t
@@ -539,8 +694,10 @@
 	:states 'normal
 	:keymaps 'youdao-dictionary-mode-map
 	"q" 'quit-window))
-   #+end_src 
+   #+end_src
+
 ** Evil-terminal-cursor-changer
+
    For TUI Emacs, change the cursor shape (bar/box) automatically.
    #+begin_src emacs-lisp
      (use-package evil-terminal-cursor-changer
@@ -550,9 +707,49 @@
 	 (evil-terminal-cursor-changer-activate) ;; or (etcc-on)
 	 ))
    #+end_src
+
+** Winum
+
+   Winum shows window numbers when multiple windows exist, and provides quick switch to each window.
+   #+begin_src emacs-lisp
+     (use-package winum
+       :ensure t
+       :init (winum-mode))
+  #+end_src
+
+** Ibuffer
+
+   Ibuffer enhances the buffer management.
+   #+begin_src emacs-lisp
+     ;; ibuffer
+     (setq ibuffer-show-empty-filter-groups nil)
+     (setq ibuffer-saved-filter-groups
+	   '(("default"
+	      ("Dired" (mode . dired-mode))
+	      ("Org" (mode . org-mode))
+	      ("Emacs" (or
+			(name . "^\\*scratch\\*$")
+			(name . "^\\*Backtrace\\*$")
+			(name . "^\\*Messages\\*$")))
+	      ("Help" (or
+		       (name . "Help")
+		       (name . "^helpful")))
+	      )))
+
+     (add-hook 'ibuffer-mode-hook (lambda () (ibuffer-switch-to-saved-filter-groups "default")))
+  #+end_src
+
+* Uncategorized
+
+  This Part is left for any new configurations.
+  #+begin_src emacs-lisp
+
+  #+end_src
+
 * Local Variables
+
   Local variables should be placed at the end of this file
 
-;; Local Variables: 
-;; eval: (add-hook 'after-save-hook (lambda () (if (y-or-n-p "Tangle?") (org-babel-tangle))) nil t)
-;; End:
+  ;; Local Variables:
+  ;; eval: (add-hook 'after-save-hook (lambda () (if (y-or-n-p "Tangle?") (org-babel-tangle))) nil t)
+  ;; End:
