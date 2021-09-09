@@ -86,6 +86,34 @@
        :ensure t)
    #+end_src
 
+* Garbage Collection
+
+  Garbage magic hack.
+  #+begin_src emacs-lisp
+    (use-package gcmh
+      :ensure t
+      :diminish gcmh-mode
+      :init
+      (setq gcmh-idle-delay 5)
+      (setq gcmh-high-cons-threshold (* 16 1024 1024)) ;; 16MB for GC
+      (gcmh-mode))
+  #+end_src
+
+* Startup Benchmark
+
+  #+begin_src emacs-lisp
+    (defun w1/startup-benchmark ()
+      "Showing Emacs initializing time, packages loaded and GC"
+      (format "Emacs loaded %d packages in %.2f seconds with %d garbage collections."
+	      (- (length load-path) (length (get 'load-path 'initial-value)))
+	      (float-time (time-subtract (current-time) before-init-time))
+	      gcs-done))
+
+    (add-hook 'emacs-startup-hook (lambda ()
+				    (setq init-message (w1/startup-benchmark))
+				    (message init-message)))
+  #+end_src
+
 * Basic UI
 
   #+begin_src emacs-lisp
@@ -607,24 +635,24 @@
 
    LSP is the "Language Server Protocal". Not enabled for now.
    #+begin_src emacs-lisp
-    ;; (use-package lsp-mode
-    ;;   :ensure t
-    ;;   :commands (lsp lsp-deferred)
-    ;;   :init
-    ;;   (setq lsp-keymap-prefix "C-c l")
-    ;;   :bind
-    ;;   (:map lsp-mode-map
-    ;; 	    ("<tab>" . company-indent-or-complete-common))
-    ;;   :hook
-    ;;   (prog-mode . lsp-deferred)
-    ;;   (lsp-mode . lsp-enable-which-key-integration))
-  #+end_src
+     ;; (use-package lsp-mode
+     ;;   :ensure t
+     ;;   :commands (lsp lsp-deferred)
+     ;;   :init
+     ;;   (setq lsp-keymap-prefix "C-c l")
+     ;;   :bind
+     ;;   (:map lsp-mode-map
+     ;; 	    ("<tab>" . company-indent-or-complete-common))
+     ;;   :hook
+     ;;   (prog-mode . lsp-deferred)
+     ;;   (lsp-mode . lsp-enable-which-key-integration))
+   #+end_src
 
-  #+begin_src emacs-lisp
-    ;; (use-package lsp-ui
-    ;;   :ensure t
-    ;;   :hook (lsp-mode . lsp-ui-mode))
-  #+end_src
+   #+begin_src emacs-lisp
+     ;; (use-package lsp-ui
+     ;;   :ensure t
+     ;;   :hook (lsp-mode . lsp-ui-mode))
+   #+end_src
 
 * Auto Complete
 
@@ -644,7 +672,7 @@
        :custom
        (company-minimum-prefix-length 3)
        (company-idle-delay 0.1))
-  #+end_src
+   #+end_src
 
 ** Yasnippet
 
@@ -694,7 +722,7 @@
        :config
        (evil-collection-define-key 'normal 'dired-mode-map
 	 "H" 'dired-hide-dotfiles-mode))
-#+end_src
+   #+end_src
 
 ** Recentf
 
@@ -742,7 +770,7 @@
      (use-package winum
        :ensure t
        :init (winum-mode))
-  #+end_src
+   #+end_src
 
 ** Ibuffer
 
@@ -764,7 +792,16 @@
 	      )))
 
      (add-hook 'ibuffer-mode-hook (lambda () (ibuffer-switch-to-saved-filter-groups "default")))
-  #+end_src
+   #+end_src
+
+** Xclip
+
+   Xclip provides copy and paste in terminal mode.
+   #+begin_src emacs-lisp
+     (use-package xclip
+       :ensure t
+       :init (xclip-mode))
+   #+end_src
 
 * Uncategorized
 
