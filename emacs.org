@@ -12,6 +12,9 @@
    #+begin_src emacs-lisp
      (setq user-init-file (or load-file-name (buffer-file-name)))
      (setq user-emacs-directory (file-name-directory user-init-file))
+     (setq user-full-name "wang1zhen")
+     (setq user-mail-address "wang1zhendire@hotmail.com")
+
      (setq init-file-user "") ;; Without setting it, amx would not save the history
    #+end_src
 
@@ -36,7 +39,22 @@
      ;; Disable automatic backup ~ file
      (setq make-backup-files nil)
 
-     ;; Does not modify the autosave behaviours
+     ;; Do not generate lockfiles
+     (setq create-lockfiles nil)
+
+     ;; Auto-save behaviours from Doom
+     (setq auto-save-default t)
+     (setq auto-save-include-big-deletions t)
+     (setq auto-save-list-file-prefix (concat user-emacs-directory "autosave/"))
+     (setq tramp-auto-save-directory  (concat user-emacs-directory "tramp-autosave/"))
+     (setq auto-save-file-name-transforms
+	   (list (list "\\`/[^/]*:\\([^/]*/\\)*\\([^/]*\\)\\'"
+		       ;; Prefix tramp autosaves to prevent conflicts with local ones
+		       (concat auto-save-list-file-prefix "tramp-\\2") t)
+		 (list ".*" auto-save-list-file-prefix t)))
+
+     ;; Launch Emacs maximized
+     (add-hook 'window-setup-hook #'toggle-frame-maximized)
    #+end_src
 
 * Package System
@@ -483,7 +501,7 @@
        :ensure t
        :diminish which-key-mode
        :init
-       (setq which-key-idle-delay 0.1)
+       (setq which-key-idle-delay 0.2)
        (setq which-key-sort-order 'which-key-key-order-alpha)
        (which-key-mode))
    #+end_src
@@ -539,7 +557,9 @@
      (use-package rainbow-delimiters
        :ensure t
        :diminish rainbow-delimiters-mode
-       :hook (prog-mode . rainbow-delimiters-mode))
+       :hook
+       (prog-mode . rainbow-delimiters-mode)
+       (LaTeX-mode . rainbow-delimiters-mode))
    #+end_src
 
 * Org Mode
@@ -571,10 +591,22 @@
 	  (latex . t)
 	  (python . t)))
        :custom
+       (org-directory "~/org")
        (org-ellipsis " ▾")
        (org-hide-emphasis-markers nil) ;; Show bold and italic verbosely
        (org-link-descriptive nil) ;; Show links verbosely
-       (org-hide-leading-stars t))
+       (org-hide-leading-stars t)
+       ;; export settings
+       (org-export-with-tags nil)
+       (org-latex-image-default-width "\\linewidth")
+       ;; latex hyperref configs
+       (org-latex-hyperref-template "\\hypersetup{\n pdfauthor={%a},\n pdftitle={%t},\n pdfkeywords={%k},\n pdfsubject={%d},\n colorlinks=true,\n linkcolor=black\n}\n")
+       (org-export-with-toc 3)
+       ;; set table of contents level
+       (org-export-with-toc 3)
+       (org-latex-toc-command "\\pagestyle{empty}\n\\tableofcontents\n\\clearpage\n\n\\setcounter{page}{1}\n\\pagestyle{plain}\n\n")
+       ;; maketitle command
+       (org-latex-title-command "\\maketitle\n\\thispagestyle{empty}"))
    #+end_src
 
 ** Org-superstar
@@ -589,6 +621,83 @@
        (org-superstar-headline-bullets-list '("■" "◆" "▲" "▶"))
        (org-superstar-cycle-headline-bullets nil)
        (org-superstar-prettify-item-bullets nil))
+   #+end_src
+
+** Org-download
+
+   #+begin_src emacs-lisp
+     (use-package org-download
+       :ensure t
+       :custom
+       (org-download-method 'directory)
+       (org-download-image-dir "images")
+       (org-download-heading-lvl nil)
+       (org-download-timestamp "%Y%m%d-%H%M%S_")
+       :config
+       ;; to change image width seperately (also hide the annotate #+DOWNLOADED)
+       (setq org-download-annotate-function (lambda (_link) "#+ATTR_LATEX: :width \\linewidth\n"))
+
+       ;; ask for the filename before pasting an image
+       ;; filename should end with ".png/.jpg/.svg"
+       (defun w1/org-download-paste-clipboard (&optional use-default-filename)
+	 (interactive "P")
+	 (let ((file
+		(if (not use-default-filename)
+		    (read-string (format "Filename [%s]: "
+					 org-download-screenshot-basename)
+				 nil nil org-download-screenshot-basename)
+		  nil)))
+	   (org-download-clipboard file))))
+   #+end_src
+
+** Org-roam
+
+   #+begin_src emacs-lisp
+     (use-package org-roam
+       :ensure t
+       :init
+       (setq org-roam-v2-ack t)
+       :custom
+       (org-roam-directory (file-truename "~/org-roam/"))
+       (org-id-locations-file (file-truename "~/org-roam/.orgids"))
+       :config
+       (org-roam-db-autosync-mode)
+       ;; bindings TBD
+       )
+   #+end_src
+
+* LaTeX
+** Auctex
+   #+begin_src emacs-lisp
+     (use-package latex
+       :ensure auctex
+       :custom
+       (LaTeX-electric-left-right-brace t)
+       (TeX-engine 'xetex)
+       (TeX-parse-self t) ;; parse onload
+       (TeX-auto-save t) ;; parse on save
+       ;; use hidden dirs for auctex files
+       (TeX-auto-local ".auctex-auto")
+       (TeX-style-local ".auctex-style")
+
+       (TeX-source-correlate-method 'synctex)
+       ;; don't start the emacs server when correlating sources
+       (TeX-source-correlate-start-server nil)
+       ;; just save, dont ask me before each compilation
+       (TeX-save-query nil)
+
+       :config
+       (add-to-list 'auto-mode-alist '("\\.tex\\'" . LaTeX-mode))
+       (TeX-source-correlate-mode))
+
+     (use-package auctex-latexmk
+       :ensure t
+       :init
+       (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+       :hook
+       (LaTeX-mode . (lambda () (setq TeX-command-default "LatexMk")))
+       :config
+       (auctex-latexmk-setup))
    #+end_src
 
 * Development
@@ -665,13 +774,26 @@
        :init (global-company-mode)
        :bind
        (:map company-active-map
-	     ("TAB" . company-complete-selection)
-	     ("<tab>" . company-complete-selection)
-	     ("RET" . newline)
-	     ("<return>" . newline))
+	     ("TAB" . company-complete-common-or-cycle)
+	     ("<tab>" . company-complete-common-or-cycle)
+	     ("RET" . company-complete-selection)
+	     ("<return>" . company-complete-selection))
        :custom
        (company-minimum-prefix-length 3)
-       (company-idle-delay 0.1))
+       (company-idle-delay 0.2)
+       :config
+       ;; Add yasnippet support for all company backends
+       ;; https://github.com/syl20bnr/spacemacs/pull/179
+       (defvar company-mode/enable-yas t
+	 "Enable yasnippet for all backends.")
+
+       (defun company-mode/backend-with-yas (backend)
+	 (if (or (not company-mode/enable-yas) (and (listp backend) (member 'company-yasnippet backend)))
+	     backend
+	   (append (if (consp backend) backend (list backend))
+		   '(:with company-yasnippet))))
+
+       (setq company-backends (mapcar #'company-mode/backend-with-yas company-backends)))
    #+end_src
 
 ** Yasnippet
@@ -802,6 +924,29 @@
        :ensure t
        :init (xclip-mode))
    #+end_src
+
+** Session
+
+   #+begin_src emacs-lisp
+     (use-package session
+       :ensure t
+       :hook (after-init . session-initialize))
+   #+end_src
+* Emacs-rime
+
+  #+begin_src emacs-lisp
+    (use-package rime
+      :ensure t
+      :custom
+      (default-input-method "rime")
+      (rime-show-candidate 'posframe)
+      (rime-posframe-style 'vertical)
+      (rime-user-data-dir (concat user-emacs-directory "rime/")))
+    ;; Windows下使用powertoys将Capslock键绑定为C-\实现快捷输入法切换
+
+    ;; 使用Shift+Delete删除自造词
+    ;; (map! "S-<delete>" nil)
+  #+end_src
 
 * Uncategorized
 
